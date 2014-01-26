@@ -13,7 +13,10 @@
 #import "datpWifiScreen.h"
 #import "datpHoldingView.h"
 
-NSString *const DATPShowInfoDidLoadNotification = @"DATPShowInfoDidLoadNotification";
+NSString* const DATPShowInfoDidLoadNotification = @"DATPShowInfoDidLoadNotification";
+
+NSString* const WEBSOCKETURL = @"ws://oscar.media.mit.edu:80";
+
 static const int MAX_SOCKETCONNECTIONATTEMPTS = 5;
 
 datpAppDelegate* AppDelegate()
@@ -28,7 +31,7 @@ NSAttributedString* GetFormattedText(NSString* text)
     return attributedText;
 }
 
-static NSString* DictionaryToJSON(NSDictionary* dict)
+static NSString* DictionaryToJSON (NSDictionary* dict)
 {
     NSError* error = nil;
     NSData* data = [NSJSONSerialization dataWithJSONObject:dict options:0 error:&error];
@@ -39,7 +42,7 @@ static NSString* DictionaryToJSON(NSDictionary* dict)
     return [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
 }
 
-static NSDictionary* JSONToDictionary(NSString* json)
+static NSDictionary* JSONToDictionary (NSString* json)
 {
     NSError* error = nil;
     id dict = [NSJSONSerialization JSONObjectWithData:[json dataUsingEncoding:NSUTF8StringEncoding] options:0 error:&error];
@@ -61,9 +64,7 @@ static NSDictionary* JSONToDictionary(NSString* json)
 {
     // Socket
     SRWebSocket *datpSocket;
-    BOOL socketReady;
     BOOL socketOpen;
-    NSString *serverUrl;
     NSTimer *socketCheck;
     
     // Content version
@@ -88,7 +89,7 @@ static NSDictionary* JSONToDictionary(NSString* json)
 //////////////////// GENERAL APP METHODS ////////////////////
 /////////////////////////////////////////////////////////////
 
-- (void) applicationWillResignActive:(UIApplication*)aApplication
+- (void) applicationWillResignActive: (UIApplication*) aApplication
 {
     [datpSocket close];
     [self updateUserDefaults];
@@ -102,7 +103,7 @@ static NSDictionary* JSONToDictionary(NSString* json)
     [TestFlight passCheckpoint:@"[App Delegate] Application became active."];
     
     // Set brightness of screen to high
-    [[UIScreen mainScreen] setBrightness:1.0];
+    [[UIScreen mainScreen] setBrightness:BRIGHT];
     
     [self updateUserDefaults];
     
@@ -110,12 +111,12 @@ static NSDictionary* JSONToDictionary(NSString* json)
     [self _requestContentVersion];
 }
 
-- (BOOL) application:(UIApplication *)application willFinishLaunchingWithOptions:(NSDictionary *)launchOptions
+- (BOOL) application:(UIApplication *)application willFinishLaunchingWithOptions: (NSDictionary *) launchOptions
 {
     userDefaults = [NSUserDefaults standardUserDefaults];
     
     // Set brightness of screen to high
-    [[UIScreen mainScreen] setBrightness:1.0];
+    [[UIScreen mainScreen] setBrightness:BRIGHT];
     
     // Start Testflight
     [TestFlight takeOff:@"a0eacfa5-5071-4ea9-a4dc-46a6e8c6ae4c"];
@@ -152,9 +153,6 @@ static NSDictionary* JSONToDictionary(NSString* json)
 
     // Instantiate facebook profile picture view
     [FBProfilePictureView class];
-    
-    // Server url to connect to
-    serverUrl = @"ws://oscar.media.mit.edu:80";
     
     return YES;
 }
@@ -239,6 +237,53 @@ static NSDictionary* JSONToDictionary(NSString* json)
 ////////////////////// FACEBOOK /////////////////////////////
 /////////////////////////////////////////////////////////////
 
+- (void) navigateUser
+{
+    NSDictionary *defaults = [userDefaults dictionaryRepresentation];
+    
+    NSLog(@"Navigating User");
+    
+    // Get network information
+    [self.wifiViewController updateNetworkInformation];
+    
+    // Redirected to correct screen based on certain conditions
+    if (!defaults[@"location"])
+    {
+        [self transitionToViewController:self.welcomeAndInfoViewController];
+    }
+    else if (!self.connectedToAWifiNetwork ||
+             !self.connectedToInternet ||
+             (self.showVenueWifi && !self.connectedToCorrectWifiNetwork))
+    {
+        NSLog(@"[App Delegate Redirect] Not connected to internet or wifi or supposed to show wifi. Going to wifi.");
+        [self transitionToViewController:self.wifiViewController];
+    }
+    else if (!defaults[@"downloaded_facebook_photos"] && !defaults[@"skipped_facebook"])
+    {
+        NSLog(@"[App Delegate Redirect] Haven't chose what to do about facebook. Going to facebook.");
+        [self transitionToViewController:self.facebookViewController];
+    }
+    else if ([[userDefaults objectForKey:@"latest_content_version"] isEqualToString:@"false"])
+    {
+        NSLog(@"[App Delegate Redirect] Device doesn't have latest content version. Going to production content download.");
+        [self transitionToViewController:self.productionContentViewController];
+    }
+    else if (AppDelegate().showHoldingScreen)
+    {
+        NSLog(@"[App Delegate Redirect] Showing holding screen.");
+        [self transitionToViewController:self.holdingViewController];
+    }
+    else
+    {
+        NSLog(@"[App Delegate Redirect] Skipping holding screen. Moving straight to show.");
+        [self transitionToViewController:self.mainShowViewController];
+    }
+}
+
+/////////////////////////////////////////////////////////////
+////////////////////// FACEBOOK /////////////////////////////
+/////////////////////////////////////////////////////////////
+
 - (BOOL) application:(UIApplication *)application openURL:(NSURL *)url sourceApplication:(NSString *)sourceApplication annotation:(id)annotation
 {
     // Call FBAppCall's handleOpenURL:sourceApplication to handle Facebook app responses
@@ -265,7 +310,7 @@ static NSDictionary* JSONToDictionary(NSString* json)
     // Get arguments
     NSDictionary *arguments = messageJSON[@"arguments"];
     NSString *address = messageJSON[@"address"];
-    
+        
     // If response contains content message
     if ([address isEqualToString:@"/content_version"])
     {
@@ -341,31 +386,30 @@ static NSDictionary* JSONToDictionary(NSString* json)
     NSLog(@"[App Delegate] Attempting to open socket.");
     
     // Instantiate and open
-    datpSocket = [[SRWebSocket alloc] initWithURL:[[NSURL alloc] initWithString:serverUrl]];
+    datpSocket = [[SRWebSocket alloc] initWithURL:[[NSURL alloc] initWithString:WEBSOCKETURL]];
     datpSocket.delegate = self;
     [datpSocket open];
     socketOpen = YES;
+}
+
+- (void) webSocketDidOpen:(SRWebSocket *)webSocket
+{
+    NSLog(@"[App Delegate] Socket opened. Connected to: %@", WEBSOCKETURL);
+    [TestFlight passCheckpoint:[NSString stringWithFormat:@"[App Delegate] Socket successfully connected to %@.", WEBSOCKETURL]];
+
+    // Reset socket connection attempts
+    socketConnectionAttempts = 0;
+    
+    [self updateUserDefaults];
 
     // Send device information to server
     [self _sendDeviceInfoToServer];
 }
 
-- (void) webSocketDidOpen:(SRWebSocket *)webSocket
-{
-    NSLog(@"[App Delegate] Socket opened. Connected to: %@", serverUrl);
-    [TestFlight passCheckpoint:[NSString stringWithFormat:@"[App Delegate] Socket successfully connected to %@.", serverUrl]];
-
-    // Reset socket connection attempts
-    socketConnectionAttempts = 0;
-    
-    socketReady = YES;
-    [self updateUserDefaults];
-}
-
 - (void) webSocket:(SRWebSocket *)webSocket didFailWithError:(NSError *)error
 {
     NSLog(@"[App Delegate] Socket failed.");
-    [TestFlight passCheckpoint:[NSString stringWithFormat:@"[App Delegate] Socket failed when connecting to %@.", serverUrl]];
+    [TestFlight passCheckpoint:[NSString stringWithFormat:@"[App Delegate] Socket failed when connecting to %@.", WEBSOCKETURL]];
 
     // Increment socketConnectionAttempts
     ++socketConnectionAttempts;
@@ -379,7 +423,6 @@ static NSDictionary* JSONToDictionary(NSString* json)
     NSLog(@"[App Delegate] Socket closed.");
     [TestFlight passCheckpoint:@"[App Delegate] Socket closed."];
     
-    socketReady = NO;
     socketOpen = NO;
 }
 
@@ -406,11 +449,17 @@ static NSDictionary* JSONToDictionary(NSString* json)
 
 - (void) _backgroundSocketCheck
 {
-    if (!socketOpen) [self _openWebSocket];
+    if (!socketOpen)
+    {
+        [self _openWebSocket];
+    }
     
     if (socketConnectionAttempts > MAX_SOCKETCONNECTIONATTEMPTS)
     {
-        if (!alertPresented) [self _deployWifiAlert];
+        if (!alertPresented)
+        {
+            [self _deployWifiAlert];
+        }
     }
 }
 

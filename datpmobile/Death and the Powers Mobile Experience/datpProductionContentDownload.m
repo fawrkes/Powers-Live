@@ -170,30 +170,14 @@
 {
     NSLog(@"[Production Download] Checking for new production content.");
 
-    // If device is up to date
-    if ([[userDefaults objectForKey:@"latest_content_version"] isEqualToString:@"true"])
-    {
-        NSLog(@"[Production Download] This device has all the latest content. Moving on.");
-        [TestFlight passCheckpoint:@"[Production Download] Device is up to date on content."];
-        if (AppDelegate().showHoldingScreen)
-        {
-            [self _goToHolding];
-        }
-        else
-        {
-            [self _goToShow];
-        }
-    }
-    // If device isn't up to date
-    else
-    {
-        NSLog(@"[Production Download] Device isn't up to date.");
-        [TestFlight passCheckpoint:@"[Production Download] Device content is not up to date."];
-        contentVersionToCheckFor = AppDelegate().currentShowContentVersion;
-        
-        // Initialize download variables
-        [self _beginProductionContentDownload];
-    }
+    [AppDelegate() navigateUser];
+
+    NSLog(@"[Production Download] Device isn't up to date.");
+    [TestFlight passCheckpoint:@"[Production Download] Device content is not up to date."];
+    contentVersionToCheckFor = AppDelegate().currentShowContentVersion;
+    
+    // Initialize download variables
+    [self _beginProductionContentDownload];
 }
 
 /////////////////////////////////////////////////////////////
@@ -236,9 +220,10 @@
     
     NSArray* assets = [assetList copy];
     
-    dispatch_async(queue, ^(){
+    dispatch_async (queue, ^(){
         
         NSArray   *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+        
         NSString  *documentsDirectory = [paths objectAtIndex:0];
         
         NSFileManager *fileManager = [NSFileManager defaultManager];
@@ -355,18 +340,8 @@
     
     // Disable UI
     [downloading stopAnimating];
-    
-    // Go to holding screen until overrided to go to show
-    if (AppDelegate().showHoldingScreen)
-    {
-        NSLog(@"[Production Download] Going to holding");
-        [self _goToHolding];
-    }
-    else
-    {
-        NSLog(@"[Production Download] Skip holding screen");
-        [self _goToShow];
-    }
+
+    [AppDelegate() navigateUser];
 }
 
 - (void) _updateProgressBar
@@ -375,21 +350,5 @@
     [productionContentDownloadProgress setProgress:increase animated:YES];
 }
 
-- (void) didReceiveMemoryWarning
-{
-    [super didReceiveMemoryWarning];
-}
-
-- (void) _goToHolding
-{
-    NSLog(@"[Production Download] Going to holding.");
-    [AppDelegate() transitionToViewController:AppDelegate().holdingViewController];
-}
-
-- (void) _goToShow
-{
-    NSLog(@"[Production Download] Going to show.");
-    [AppDelegate() transitionToViewController:AppDelegate().mainShowViewController];
-}
 
 @end

@@ -10,7 +10,4 @@
 
 @interface datpLaunchImage : UIViewController
 
-- (void) navigateFromProduction;
-- (void) navigateFromWifi;
-
 @end

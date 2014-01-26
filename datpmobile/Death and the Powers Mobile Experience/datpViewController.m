@@ -6,14 +6,11 @@
 //  Copyright (c) 2013 Opera of the Future. All rights reserved.
 //
 
+#import "datpAppDelegate.h"
 #import "datpViewController.h"
 #import "NSURLImageProtocol.h"
 #define ARC4RANDOM_MAX      0x100000000
 #import "TestFlight.h"
-#import "datpAppDelegate.h"
-
-static float BRIGHT = 1.0;
-static float DIM = 0.2;
 
 @interface datpViewController () <UIWebViewDelegate>
 {
@@ -82,6 +79,11 @@ static float DIM = 0.2;
 - (void) webViewDidStartLoad:(UIWebView *)webView
 {
     [webView removeFromSuperview];
+}
+
+- (void) webView:(UIWebView *)webView didFailLoadWithError:(NSError *)error
+{
+    [self performSelector:@selector(loadShowWebPage) withObject:nil afterDelay:2.0];
 }
 
 - (void) webViewDidFinishLoad:(UIWebView *)webView

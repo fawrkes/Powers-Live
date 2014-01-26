@@ -1,3 +1,4 @@
+//
 //  datpWelcomeScreen.h
 //  Death and the Powers Mobile Experience
 //
@@ -10,10 +11,8 @@
 #import <SystemConfiguration/SystemConfiguration.h>
 #import <SystemConfiguration/CaptiveNetwork.h>
 
-@interface datpWifiScreen : UIViewController
+@interface datpWelcomeScreen : UIViewController
 
-- (void) updateNetworkInformation;
-- (IBAction) moveOnFromWifi;
+@property (strong, nonatomic) IBOutlet UIButton *continueBtn;
 
 @end
-

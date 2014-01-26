@@ -19,6 +19,9 @@
 
 extern NSString *const DATPShowInfoDidLoadNotification; // nil
 
+static float BRIGHT = 1.0;
+static float DIM = 0.2;
+
 @class datpAppDelegate;
 
 /*!
@@ -62,6 +65,9 @@ NSAttributedString* GetFormattedText(NSString*);
 // User Defaults
 @property NSMutableDictionary *deviceInfo;
 - (void) updateUserDefaults;
+
+// Navigation
+- (void) navigateUser;
 
 // Show-dependent navigation decisions
 @property BOOL showVenueWifi;

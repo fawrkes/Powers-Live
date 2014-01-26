@@ -75,12 +75,6 @@
     [continueButton addTarget:self action:@selector(_moveToNextView) forControlEvents:UIControlEventTouchUpInside];
     [backgroundImage addSubview:continueButton];
     
-    // Set on phone
-    NSString *phoneSizeFile = AppDelegate().smallPhone ? @"ios_applaunch_01_320x480.png" : @"Default~iphone.png";
-    
-    // If iPad
-    if (AppDelegate().ipad) phoneSizeFile = @"Default~ipad.png";
-    
     [self _configurePickerView];
 }
 
@@ -213,25 +207,9 @@
         // Set row
         NSInteger row = [pickerView selectedRowInComponent:0];
         [self _setLocation:[locations objectAtIndex:row]];
-        
-        // Update Network Information
-        [AppDelegate().wifiViewController updateNetworkInformation];
-        
-        // If before show and connected to wifi & internet
-        BOOL case1 = AppDelegate().connectedToInternet && AppDelegate().connectedToAWifiNetwork && !AppDelegate().showVenueWifi;
-        
-        if (AppDelegate().showVenueWifi || !case1)
-        {
-            NSLog(@"[Welcome View] Moving to wifi.");
-            
-            // Route to wifi controller, which will resize based on the phone's frame
-            [AppDelegate() transitionToViewController:AppDelegate().wifiViewController];
-        }
-        else
-        {
-            NSLog(@"[Welcome View] Skipping wifi.");
-            [AppDelegate().wifiViewController moveOnFromWifi];
-        }
+
+        // Navigate user
+        [AppDelegate() navigateUser];
     }
 }
 

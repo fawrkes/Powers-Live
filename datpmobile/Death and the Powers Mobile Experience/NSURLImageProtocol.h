@@ -1,9 +1,8 @@
 //
-//  NSURLImageProtocol.h
+//  NSURLImageProtocol.m
 //  WebViewLocalFiles
 //
-//  Created by Sufiyan Yasa on 3/6/13.
-//  Copyright (c) 2013 Sufiyan Yasa. All rights reserved.
+//  Adapted by Garrett Parrish on 11/6/13.
 //
 
 #import <Foundation/Foundation.h>

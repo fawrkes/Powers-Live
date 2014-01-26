@@ -148,7 +148,7 @@
 
 - (void) _handleChooseVenue
 {
-    [AppDelegate() transitionToViewController:AppDelegate().welcomeAndInfoViewController];
+    [AppDelegate() navigateUser];
 }
 
 /////////////////////////////////////////////////////////////
@@ -376,38 +376,6 @@
     
     [facebookProgressBar setProgress:1.0 animated:YES];
     
-    // If have the latest content version - skip production content screen
-    if ([[userDefaults objectForKey:@"latest_content_version"] isEqualToString:@"true"])
-    {
-        NSLog(@"[Facebook Login] Device has latest content version.");
-        
-        if (AppDelegate().showHoldingScreen)
-        {
-            NSLog(@"[Facebook Login] Going to holding view.");
-            [AppDelegate() transitionToViewController:AppDelegate().productionContentViewController];
-        }
-        else
-        {
-            NSLog(@"[Facebook Login] Going to show view.");
-            [AppDelegate() transitionToViewController:AppDelegate().mainShowViewController];
-        }
-    }
-    // Else - go to the screen
-    else
-    {
-        NSLog(@"[Facebook Login] Device doesn't have latest content version.");
-        [AppDelegate() transitionToViewController:AppDelegate().productionContentViewController];
-    }
+    [AppDelegate() navigateUser];
 }
-
-- (void) viewDidUnload
-{
-    [super viewDidUnload];
-}
-
-- (void) didReceiveMemoryWarning
-{
-    [super didReceiveMemoryWarning];
-}
-
 @end

@@ -282,12 +282,7 @@
 
 - (void) moveOnFromWifi
 {
-    [AppDelegate().launchImageController navigateFromWifi];
-}
-
-- (void) didReceiveMemoryWarning
-{
-    [super didReceiveMemoryWarning];
+    [AppDelegate() navigateUser];
 }
 
 @end
